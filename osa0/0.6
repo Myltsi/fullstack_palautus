@@ -1,0 +1,16 @@
+```mermaid
+sequenceDiagram
+    participant browser
+    participant server
+
+    Note right of browser: User creates a new note
+    Note right of browser: JavaScript adds note to page
+
+    browser->>server: POST /exampleapp/new_note_spa
+    activate server
+    Note left of server: JSON contains new note and timestamp
+    server-->>browser: HTTP 201 Created
+    deactivate server
+
+    Note right of browser: No page reload
+```
