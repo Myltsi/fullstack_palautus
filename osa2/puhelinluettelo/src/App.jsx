@@ -1,15 +1,30 @@
 import { useState } from 'react'
+import PersonForm from './components/PersonForm.jsx'
+import Persons from './components/Persons.jsx'
+import Search from './components/Search.jsx'
 
 const App = () => {
   // persons sisältää kaikki puhelinluettelon henkilöt.
   // setPersons päivittää persons-taulukon.
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas' }
+  const [persons, setPersons] = useState([ //testidata
+    { name: 'Arto Hellas', number: '040-123456' },
+    { name: 'Ada Lovelace', number: '39-44-5323523' },
+    { name: 'Dan Abramov', number: '12-43-234345' },
+    { name: 'Mary Poppendieck', number: '39-23-6423122' }
   ])
 
   // newName sisältää input-kentän tämänhetkisen tekstin.
   // setNewName muuttaa newName-arvoa.
   const [newName, setNewName] = useState('')
+  const [search, setSearch] = useState('')
+
+  // newNumber sisältää input-kentän tämänhetkisen tekstin.
+  // setNewNumber muuttaa newNumber-arvoa.
+  const [newNumber, setNewNumber] = useState('')
+
+  const handleNewNumber = (event) => {
+    setNewNumber(event.target.value)
+  }
 
   // Tämä funktio suoritetaan aina, kun input-kentän sisältö muuttuu.
   const handleNewName = (event) => {
@@ -21,53 +36,49 @@ const App = () => {
     setNewName(event.target.value)
   }
 
+  const personsToShow = persons.filter(person =>
+  person.name.toLowerCase().includes(search.toLowerCase())
+)
+
   // Tämä funktio suoritetaan, kun lomake lähetetään
   const addName = (event) => {
     event.preventDefault()
 
-    // Luodaan uusi henkilö käyttäjän kirjoittamasta nimestä.
-    const nameObject = {
-      name: newName,
+    if (persons.some(person => person.name === newName)) {
+      window.alert(`${newName} on jo luettelossa`)
+      return
     }
 
-    // concat luo uuden taulukon, jossa ovat sekä vanhat että uusi henkilö.
-    setPersons(persons.concat(nameObject))
+    const nameObject = {
+      name: newName,
+      number: newNumber,
+    }
 
-    // Tyhjennetään input-kenttä lisäämisen jälkeen.
+    setPersons(persons.concat(nameObject))
     setNewName('')
+    setNewNumber('')
   }
 
   return (
     <div>
-      <h2>Phonebook</h2>
+      <h1>Phonebook</h1>
+      <div>
+        <Search search={search} setSearch={setSearch} />
+      </div>
 
-      {/* Kun lomake lähetetään, addName-funktio suoritetaan. */}
-      <form onSubmit={addName}>
-        <div>
-          name:
+      <h2>Add number:</h2>  
 
-          {/* value näyttää newName-tilan arvon input-kentässä.
-              onChange suorittaa handleNewName-funktion kirjoitettaessa. */}
-          <input
-            value={newName}
-            onChange={handleNewName}
-          />
-        </div>
-
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
+      <PersonForm
+        newName={newName}
+        newNumber={newNumber}
+        handleNewName={handleNewName}
+        handleNewNumber={handleNewNumber}
+        addName={addName}
+      />    
 
       <h2>Numbers</h2>
 
-      {/* map käy jokaisen persons-taulukon henkilön läpi.
-          key auttaa Reactia tunnistamaan jokaisen listan rivin. */}
-      {persons.map(person => (
-        <p key={person.name}>
-          {person.name}
-        </p>
-      ))}
+      <Persons persons={personsToShow} />
     </div>
   )
 }
