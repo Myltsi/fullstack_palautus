@@ -1,3 +1,5 @@
+import './index.css'
+import Notification from './components/Notification.jsx'
 import Services from './components/Services.jsx'
 import { useState, useEffect } from 'react'
 import PersonForm from './components/PersonForm.jsx'
@@ -5,24 +7,21 @@ import Persons from './components/Persons.jsx'
 import Search from './components/Search.jsx'
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456' },
-    { name: 'Ada Lovelace', number: '39-44-5323523' },
-    { name: 'Dan Abramov', number: '12-43-234345' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122' }
-  ])
 
   useEffect(() => {
      Services
       .getAll()
-      .then(response => {
-        setPersons(response.data)
+        .then(initialPersons => {
+        setPersons(initialPersons)
       })
 }, [])
-
+ 
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [search, setSearch] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  const [successMessage, setSuccessMessage] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   const handleNewNumber = (event) => {
     setNewNumber(event.target.value)
@@ -39,32 +38,100 @@ const App = () => {
   const addName = (event) => {
     event.preventDefault()
 
-    if (persons.some(person => person.name === newName)) {
-      window.alert(`${newName} on jo luettelossa`)
-      return
+    if (persons.some(person => person.name.toLowerCase() === newName.toLowerCase())) {
+      const confirmUpdate = window.confirm(`${newName} on jo luettelossa, haluatko päivittää numeron?`)
+      if (confirmUpdate) {
+        const person = persons.find(p => p.name.toLowerCase() === newName.toLowerCase())
+        const updatedPerson = { ...person, number: newNumber }
+        
+        Services
+          .update(person.id, updatedPerson)
+          .then(returnedPerson => {
+              setPersons(persons.map(p => p.id !== person.id ? p : returnedPerson))
+              setNewName('')
+              setNewNumber('')
+    
+              setSuccessMessage(`Person ${person.name} was updated in the phonebook`)
+              setTimeout(() => {
+                setSuccessMessage(null)
+              }, 5000)
+          })
+          .catch(error => {
+            console.error(error)
+            setErrorMessage(
+              `Updating person ${person.name} failed.`
+            )
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
+        })
+      }
     }
-
+    
+    else {
     const nameObject = {
       name: newName,
       number: newNumber,
     }
 
-    setPersons(persons.concat(nameObject))
-    setNewName('')
-    setNewNumber('')
-  }
-
-  noteService
-      .create(noteObject)
-      .then(response => {
-        setPersons(persons.concat(response.data))
+    Services
+      .create(nameObject)
+      .then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
-      })
+        
+        setSuccessMessage(
+          `Added ${nameObject.name} to the phonebook`
+        )
+        setTimeout(() => {
+          setSuccessMessage(null)
+        }, 5000)
+      })  
+      .catch(error => {
+          console.error(error)
+          setErrorMessage(
+            `Adding person ${nameObject.name} failed.`
+          )
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
+        })
+  }
+
+  }
+
+  const deletePerson = (id) => {
+    const person = persons.find(p => p.id === id)
+    const confirmDelete = window.confirm(`Haluatko varmasti poistaa ${person.name}?`)
+
+    if (confirmDelete) {
+      Services
+        .deletePerson(id)
+        .then(() => {
+          setPersons(persons.filter(p => p.id !== id))
+          setSuccessMessage(`Deleted ${person.name} from the phonebook`)
+          setTimeout(() => {
+            setSuccessMessage(null)
+          }, 5000)
+        })
+        .catch(error => {
+          console.error(error)
+          setErrorMessage(
+            `Deleting person ${person.name} failed.`
+          )
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
+        })
+      }
+    }
 
   return (
     <div>
       <h1>Phonebook</h1>
+      <Notification message={successMessage} type="success" />
+      <Notification message={errorMessage} type="error" />
       <div>
         <Search search={search} setSearch={setSearch} />
       </div>
@@ -81,7 +148,10 @@ const App = () => {
 
       <h2>Numbers</h2>
 
-      <Persons persons={personsToShow} />
+      <Persons 
+      persons={personsToShow}
+      onDeletePerson={deletePerson}
+       />
     </div>
   )
 }
