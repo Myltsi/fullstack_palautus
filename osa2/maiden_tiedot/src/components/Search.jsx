@@ -1,0 +1,15 @@
+// Hakukenttä komponentti, joka sisältää input-kentän ja sen arvon hallinnan
+
+const Search = ({ search, setSearch }) => {
+  return (
+    <div>
+      Search:
+      <input
+        value={search}
+        onChange={event => setSearch(event.target.value)}
+      />
+    </div>
+  )
+}
+
+export default Search
